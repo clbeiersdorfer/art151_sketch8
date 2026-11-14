@@ -3,41 +3,37 @@ nn.on('load', () =>{
           buttons: {
         "moveUp": {
             keyboard: ["up", "w"],
-            gamepad: ["north"],
+            gamepad: ["dpad-up"],
         },
         "moveDown": {
             keyboard: ["down", "s"],
-            gamepad: ["south"],
+            gamepad: ["dpad-down"],
         },
         "moveLeft": {
             keyboard: ["left", "a"],
-            gamepad: ["west"],
+            gamepad: ["dpad-left"],
         },
         "moveRight": {
             keyboard: ["right", "d"],
             gamepad: ["dpad-right"],
         },
-        "mutate": {
-            keyboard: ["space", "t", "enter"],
-            gamepad: ["south"],
-            // Setting mouse binding
-            mouse: "left",
         }
-          }
-        })
+        });
         
   const SPEED = 120;
 const JUMP_FORCE = 240;
+  const DEADZONE = 0.15;
+ let beeSound;
+let isPlaying = false;
+  let bgm = false;
 setGravity(640);
 
   
-  
+  // load visual assets
 
 loadSprite("player", "assets/playersprite.png", {
-    // The image contains 9 frames layered out horizontally, slice it into individual frames
     sliceX: 4,
   sliceY: 4,
-    // Define animations
     anims: {
         "forward": {
             // Starts from frame 0, ends at frame 3
@@ -86,6 +82,11 @@ loadSprite("player", "assets/playersprite.png", {
     }
 });
 
+  // load music and sound effects
+  loadSound("bee","assets/BEES.mp3" );
+  loadSound("bbbean voice","assets/bean_voice.wav" )
+  loadMusic("bgm","assets/bgm.wav")
+  
 // Add our player character 
 const player = add([
     sprite("playeridle"),
@@ -94,6 +95,7 @@ const player = add([
     area(),
     body(),
 ]);
+
 
   player.play("idle")
 // Add a platforms
@@ -153,23 +155,109 @@ add([
   
   //controlls
  onUpdate(() => {
+    // 1. Start with digital input from WASD, Arrow keys, or D-pad
+    const moveDir = vec2(0, 0);
+    
+    // 2. Read both analog sticks ("left" and "right")
     const leftStick = getGamepadStick("left");
     const rightStick = getGamepadStick("right");
 
-    // Move player using the configured left stick axes
-    player.move(leftStick.scale(100)); 
+    // 3. Apply deadzone and override/add stick movement if tilted
+    if (leftStick.len() > DEADZONE) {
+        moveDir.x = leftStick.x;
+        moveDir.y = leftStick.y;
+    } else if (rightStick.len() > DEADZONE) {
+        moveDir.x = rightStick.x;
+        moveDir.y = rightStick.y;
+    }
+
+    // 4. Move the player
+    player.move(moveDir.scale(SPEED));
+   
+   //timer
+    let timeLeft =30;
+
+    const timer = add([
+        anchor("topright"),
+        pos(width() - 24, 24),
+        text(timeLeft.toString()),
+    ]);
+       timeLeft -= dt();
+        if (timeLeft <= 0) {
+            go("win", score.value);
+        }
+        timer.text = timeLeft.toFixed(2);
+});
+  
+  onButtonDown("moveLeft", () => {
+    player.move(-SPEED, 0);
+    // player.play("left");
+
+    if (!isPlaying) {
+        isPlaying = true;
+        beeSound = play("bee", {
+            volume: 0.04,
+        });
+
+        // reset
+        beeSound.onEnd(() => {
+            isPlaying = false;
+        });
+    }
+});
+
+onButtonDown("moveRight", () => {
+    player.move(SPEED, 0);
+  if (!isPlaying) {
+        isPlaying = true;
+        beeSound = play("bee", {
+            volume: 0.04,
+        });
+
+        // reset
+        beeSound.onEnd(() => {
+            isPlaying = false;
+        });
+    }
+});
+
+onButtonDown("moveUp", () => {
+    player.move(0, -SPEED);
+});
+
+onButtonDown("moveDown", () => {
+    player.move(0, SPEED);
 });
   //projectiles
   
   //enemies
+
+
   
-  //timer + score
+  //score
   
   //music 
+  
+  onLoad(() => {
+ bgm = play("bgm", {
+     loop: true,
+     volume: 0.5,
+  paused:false
+ });
+ })
+  onKeyPress("space", () => bgm.paused = !bgm.paused);
   
   //camera change 
   
   //new scene
+  scene("win", (score) => {
+    add([
+        sprite("bean"),
+        pos(width() / 2, height() / 2 - 80),
+        scale(2),
+        anchor("center"),
+    ]);
 
   
         })
+})
