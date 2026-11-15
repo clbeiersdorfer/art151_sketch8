@@ -21,11 +21,16 @@ nn.on('load', () =>{
         });
         
   const SPEED = 120;
-const JUMP_FORCE = 240;
+const JUMP_FORCE = 500;
   const DEADZONE = 0.15;
  let beeSound;
 let isPlaying = false;
   let bgm = false;
+     const score = add([
+        text("0", { size: 24 }),
+        pos(24, 24),
+        { value: 0 },
+    ]);
 setGravity(640);
 
   
@@ -86,6 +91,7 @@ loadSprite("player", "assets/playersprite.png", {
   loadSound("bee","assets/BEES.mp3" );
   loadSound("bbbean voice","assets/bean_voice.wav" )
   loadMusic("bgm","assets/bgm.wav")
+  loadSound("sparkle", "assets/sparkle.wav")
   
 // Add our player character 
 const player = add([
@@ -93,7 +99,9 @@ const player = add([
     pos(center()),
     anchor("center"),
     area(),
-    body(),
+    body({ jumpForce: JUMP_FORCE }),
+        // Adds the double jump component
+        doubleJump(), 
 ]);
 
 
@@ -103,7 +111,7 @@ const player = add([
 add([
     rect(width(), 24),
     area(),
-    outline(6),
+    outline(3, GREEN),
     pos(0, height() - 24),
     body({ isStatic: true }),
   color(MAGENTA)
@@ -153,16 +161,26 @@ add([
   color(BLACK)
 ]);
   
-  //controlls
+   //timer
+    let timeLeft = 30;
+
+    const timer = add([
+        anchor("topright"),
+        pos(width() - 24, 24),
+        text(timeLeft.toString()),
+    ]);
+       
+  
+  //controlls + timer
  onUpdate(() => {
-    // 1. Start with digital input from WASD, Arrow keys, or D-pad
+    // Start with digital input from WASD, Arrow keys, or D-pad
     const moveDir = vec2(0, 0);
     
-    // 2. Read both analog sticks ("left" and "right")
+    //. Read both analog sticks ("left" and "right")
     const leftStick = getGamepadStick("left");
     const rightStick = getGamepadStick("right");
 
-    // 3. Apply deadzone and override/add stick movement if tilted
+    // Apply deadzone and override/add stick movement if tilted
     if (leftStick.len() > DEADZONE) {
         moveDir.x = leftStick.x;
         moveDir.y = leftStick.y;
@@ -171,23 +189,40 @@ add([
         moveDir.y = rightStick.y;
     }
 
-    // 4. Move the player
+    //  Move the player
     player.move(moveDir.scale(SPEED));
    
    //timer
-    let timeLeft =30;
-
-    const timer = add([
-        anchor("topright"),
-        pos(width() - 24, 24),
-        text(timeLeft.toString()),
-    ]);
-       timeLeft -= dt();
+   timeLeft -= dt();
         if (timeLeft <= 0) {
             go("win", score.value);
         }
         timer.text = timeLeft.toFixed(2);
+   
+ });
+onButtonDown("moveRight", () => {
+    player.move(SPEED, 0);
+  if (!isPlaying) {
+        isPlaying = true;
+        beeSound = play("bee", {
+            volume: 0.04,
+        });
+
+        // reset
+        beeSound.onEnd(() => {
+            isPlaying = false;
+        });
+    }
 });
+
+onButtonDown("moveUp", () => {
+   player.doubleJump();
+});
+
+onButtonDown("moveDown", () => {
+    player.move(0, -SPEED);
+});
+   
   
   onButtonDown("moveLeft", () => {
     player.move(-SPEED, 0);
@@ -206,35 +241,45 @@ add([
     }
 });
 
-onButtonDown("moveRight", () => {
-    player.move(SPEED, 0);
-  if (!isPlaying) {
-        isPlaying = true;
-        beeSound = play("bee", {
-            volume: 0.04,
-        });
-
-        // reset
-        beeSound.onEnd(() => {
-            isPlaying = false;
-        });
-    }
-});
-
-onButtonDown("moveUp", () => {
-    player.move(0, -SPEED);
-});
-
-onButtonDown("moveDown", () => {
-    player.move(0, SPEED);
-});
-  //projectiles
+  //ADD projectiles out of a gun 
   
-  //enemies
+  //enemies (add loadprite for ghosts) that disappear (destroy()) after being shot a random about of time per a ghost (random amount of ghosts pers a reload)
+  
+// goodies forr score increase
+ loadSprite("sparkle", "assets/sparkles.png");
 
+function spawnSparkle() {
+    add([
+        sprite("sparkle"),
+        pos(rand(0, width()), rand(0, height())),
+        scale(rand(0.5, 1.5)),
+        rotate(rand(0, 180)),
+        anchor("center"),
+        area(),
+        "sparkle", // collision tag
+    ]);
+}
+
+// spawn 10
+for (let i = 0; i < 10; i++) {
+    spawnSparkle();
+}
 
   
   //score
+player.onCollide("sparkle", (s) => {
+    destroy(s);
+      play("sparkle");
+      score.value += 1;
+    score.text = score.value.toString();
+  })
+ 
+ add([
+      text(score),
+      pos(width() / 2, height() / 2 + 80),
+     scale(2),
+     anchor("center"),
+ ]);
   
   //music 
   
@@ -247,15 +292,16 @@ onButtonDown("moveDown", () => {
  })
   onKeyPress("space", () => bgm.paused = !bgm.paused);
   
-  //camera change 
+  //camera change to more platforms and ghosts if player go to botton right corner
   
-  //new scene
-  scene("win", (score) => {
-    add([
-        sprite("bean"),
-        pos(width() / 2, height() / 2 - 80),
-        scale(2),
-        anchor("center"),
+  //new scene add a lose scene and a scene  at a certain amount of time the scene goes inverted
+ scene("win", (score) => {
+   add([
+        sprite("player"),
+       pos(width() / 2, height() / 2 - 80),
+       scale(2),
+      anchor("center"),
+    
     ]);
 
   
