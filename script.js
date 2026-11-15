@@ -163,8 +163,9 @@ nn.on("load", () => {
   }
 
 
+  
+  
   // GAME SCENE SETUP
-
   
   //LVL 1
 
@@ -174,7 +175,6 @@ nn.on("load", () => {
 
     let facing = RIGHT;
 
-   //// let nextAreaLoaded = false;
 
     const scoreText = add([
       text(gameScore.toString(), {
@@ -372,7 +372,15 @@ const timer = add([
     ]);
 
     player.play("idle");
-
+    
+const levelExit = add([
+    rect(100, 100),
+    pos(width()- 100, height() - 100),
+    area(),
+      color(GREEN),
+   // opacity(0),
+    "levelExit",
+]);
     // Ground
     makePlatform(
         0,
