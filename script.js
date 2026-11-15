@@ -4,7 +4,7 @@ nn.on("load", () => {
   // KAPLAY SETUP
 
   kaplay({
-    buttons: {
+buttons: {
       moveUp: {
         keyboard: ["up", "w"],
         gamepad: ["dpad-up"],
@@ -22,6 +22,7 @@ nn.on("load", () => {
         gamepad: ["dpad-right"],
       },
     },
+    background: [222,217,217],
   });
 
 
@@ -36,6 +37,7 @@ nn.on("load", () => {
   let bgm;
   let timeLeft = 30;
   let gameScore = 0;
+  let Spawnside = "left";
 
 
   // SPRITES
@@ -169,7 +171,7 @@ nn.on("load", () => {
   
   //LVL 1
 
-  scene("game", () => {
+  scene("level1", () => {
 
     setGravity(640);
 
@@ -181,12 +183,14 @@ nn.on("load", () => {
         size: 24,
       }),
       pos(24, 24),
+      color (BLACK),
     ]);
 
     const timer = add([
       text(timeLeft.toFixed(0)),
       pos(width() - 24, 24),
       anchor("topright"),
+      color(BLACK)
     ]);
 
     const player = add([
@@ -326,9 +330,35 @@ nn.on("load", () => {
       gameScore += 5;
       scoreText.text = gameScore.toString();
     });
+    
+    const fade = add([
+    rect(width(), height()),
+    pos(0, 0),
+    color(BLACK),
+    opacity(0),
+    fixed(),
+]);
       player.onCollide("levelExit", () => {
-    go("level2");
-  });
+
+    tween(
+        0,
+        1,
+        0.5,
+        (value) => {
+            fade.opacity = value;
+        },
+        easings.linear
+    );
+
+    wait(0.5, () => {
+
+        spawnSide = "left";
+
+        go("level2");
+
+    });
+
+});
   });
   
 
@@ -362,7 +392,10 @@ const timer = add([
 
     const player = add([
         sprite("playeridle"),
-        pos(100, 100),
+        pos(spawnSide === "left" ? 50
+          : width() - 50,
+            height() / 2
+        ),
         anchor("center"),
         area(),
         body({
@@ -373,20 +406,20 @@ const timer = add([
 
     player.play("idle");
     
-const levelExit = add([
-    rect(100, 100),
-    pos(width()- 100, height() - 100),
+const returnExit = add([
+    rect(50, height()),
+    pos(0,0),
     area(),
       color(GREEN),
    // opacity(0),
-    "levelExit",
+    "returnExit",
 ]);
     // Ground
     makePlatform(
         0,
         height() - 24,
         width(),
-        CYAN
+       GREEN
     );
 
     // Random platforms
@@ -396,23 +429,19 @@ const levelExit = add([
             rand(0, width() - 300),
             rand(100, height() - 100),
             rand(100, 350),
-            rgb(
-                rand(100, 255),
-                rand(100, 255),
-                rand(100, 255)
-            )
+            rgb(0, rand(100, 255), rand(100, 255))
         );
 
     }
 
-    // More enemies
+    // Spawn Butterflies
     spawnBFlyWave();
 
-    loop(10, () => {
+    loop(20, () => {
         spawnBFlyWave();
     });
 
-    // Same controls as level 1
+    // controlls
     onButtonDown("moveRight", () => {
         player.move(SPEED, 0);
         facing = RIGHT;
@@ -432,7 +461,7 @@ const levelExit = add([
     function shoot() {
         add([
             circle(4),
-            color(BLUE),
+            color(YELLOW),
             pos(player.pos),
             area(),
             move(facing, 500),
@@ -441,6 +470,7 @@ const levelExit = add([
         ]);
     }
 
+    onGamepadButtonPress("south", shoot);
     onKeyPress("f", shoot);
     
     onUpdate(() => {
@@ -448,6 +478,13 @@ const levelExit = add([
     if (gameScore.value >= 50) {
         go("win", gameScore.value);
     }
+
+});
+    player.onCollide("returnExit", () => {
+
+    spawnSide = "right";
+
+    go("level1");
 
 });
 
@@ -462,16 +499,18 @@ const levelExit = add([
       }),
       pos(center()),
       anchor("center"),
+      color(BLACK),
     ]);
 
     add([
       text("Press ENTER to play again"),
       pos(center().add(0, 120)),
       anchor("center"),
+      color(BLACK),
     ]);
 
     onKeyPress("enter", () => {
-      go("game");
+      go("level1");
     });
   });
 
@@ -482,7 +521,7 @@ const levelExit = add([
     add([
       text("YOU LOSE", {
         size: 48,
-      }),
+      }), color(BLACK),
       pos(center()),
       anchor("center"),
     ]);
@@ -491,10 +530,11 @@ const levelExit = add([
       text("Press ENTER to try again"),
       pos(center().add(0, 80)),
       anchor("center"),
+      color(BLACK),
     ]);
 
     onKeyPress("enter", () => {
-      go("game");
+      go("level1");
     });
   });
 
@@ -512,5 +552,5 @@ const levelExit = add([
   });
 
   // START GAME
-  go("game");
+  go("level1");
 });
