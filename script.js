@@ -26,6 +26,7 @@ nn.on('load', () => {
   let beeSound;
   let isPlaying = false;
   let bgm = false;
+  let bullet;
   const score = add([
     text("0", {
       size: 24
@@ -90,6 +91,7 @@ nn.on('load', () => {
       },
     }
   });
+  loadSprite("bFly", "assets/btfly-o.png");
 
   // load music and sound effects
   loadSound("bee", "assets/BEES.mp3");
@@ -200,7 +202,7 @@ nn.on('load', () => {
  //projectile
   function shoot() {
 
-    add([
+   bullet = add([
      circle(4),
       color(BLUE),
         pos(player.pos),
@@ -215,7 +217,52 @@ onGamepadButtonPress ("south", shoot);
 
   
 
-  //enemies (add loadprite for ghosts) that disappear (destroy()) after being shot a random about of time per a ghost (random amount of ghosts pers a reload)
+  //enemies 
+  function spawnBFly() {
+
+    const bFly = add([
+        sprite("bFly"),
+        pos(
+            rand(100, width() - 100),
+            rand(100, height() - 100)
+        ),
+        area(),
+        anchor("center"),
+        "bFly",
+    ]);
+
+    // random lifespan
+    wait(rand(3, 30), () => {
+        if (bFly.exists()) {
+            destroy(bFly);
+        }
+    });
+    
+
+}
+  
+  function spawnBFlyWave() {
+
+    const amount = randi(3, 8);
+
+    for (let i = 0; i < amount; i++) {
+        spawnBFly();
+    }
+
+}
+  loop(15, () => {
+    spawnBFlyWave();
+});
+
+  onCollide("bullet", "bFly", (bullet, bFly) => {
+
+    destroy(bullet);
+    destroy(bFly);
+
+    score.value += 5;
+    score.text = score.value.toString();
+
+});
 
   // goodies forr score increase
   loadSprite("sparkle", "assets/sparkles.png");
@@ -251,7 +298,9 @@ onGamepadButtonPress ("south", shoot);
     score.text = score.value.toString();
     /// add spawnSparkle(); to spawn more
   })
-
+player.onCollide("bFly", () => {
+    go("lose");
+});
   
   //music 
 
@@ -275,6 +324,32 @@ onGamepadButtonPress ("south", shoot);
       anchor("center"),
 
     ]);
+    
+    
+    if (timeLeft <= 0) {
+    go("lose");
+}
+    scene("lose", () => {
+
+    add([
+        text("YOU LOSE", {
+            size: 48,
+        }),
+        pos(center()),
+        anchor("center"),
+    ]);
+
+    add([
+        text("Press ENTER"),
+        pos(center().add(0, 60)),
+        anchor("center"),
+    ]);
+
+    onKeyPress("enter", () => {
+        go("game");
+    });
+
+});
 
 
   })
