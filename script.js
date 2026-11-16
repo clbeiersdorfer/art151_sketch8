@@ -37,7 +37,7 @@ buttons: {
   let bgm;
   let timeLeft = 30;
   let gameScore = 0;
-  let Spawnside = "left";
+  let spawnSide = "left";
 
 
   // SPRITES
@@ -207,8 +207,8 @@ buttons: {
     player.play("idle");
     
     const levelExit = add([
-    rect(100, 100),
-    pos(width() - 100, height() - 100),
+    rect(10,height()),
+    pos(width()-10,0),
     area(),
       color(GREEN),
    // opacity(0),
@@ -365,35 +365,32 @@ buttons: {
   
   // LVL 2
   scene("level2", () => {
-
+console.log("LEVEL2");
     setGravity(640);
 
     let facing = RIGHT;
-    let timeLeft = 30;
+  
     const scoreText = add([
     text(gameScore.toString(), {
         size: 24,
     }),
     pos(24, 24),
+      color(BLACK)
 ]);
 
 const timer = add([
     text(timeLeft.toFixed(1)),
     pos(width() - 24, 24),
     anchor("topright"),
+  color(BLACK)
 ]);
 
-    add([
-        text("LEVEL 2"),
-        pos(width() / 2, 50),
-        anchor("center"),
-        color(YELLOW),
-    ]);
+  
 
     const player = add([
         sprite("playeridle"),
-        pos(spawnSide === "left" ? 50
-          : width() - 50,
+        pos(spawnSide === "left" ? 150
+          : width() - 150,
             height() / 2
         ),
         anchor("center"),
@@ -407,10 +404,10 @@ const timer = add([
     player.play("idle");
     
 const returnExit = add([
-    rect(50, height()),
+    rect(10, height()),
     pos(0,0),
     area(),
-      color(GREEN),
+      color(MAGENTA),
    // opacity(0),
     "returnExit",
 ]);
@@ -472,11 +469,66 @@ const returnExit = add([
 
     onGamepadButtonPress("south", shoot);
     onKeyPress("f", shoot);
-    
-    onUpdate(() => {
+    //collision
+    onCollide("bullet", "bFly", (bullet, fly) => {
 
-    if (gameScore.value >= 50) {
-        go("win", gameScore.value);
+    destroy(bullet);
+    destroy(fly);
+
+    gameScore += 5;
+
+    scoreText.text = gameScore.toString();
+
+});
+    player.onCollide("bFly", () => {
+    go("lose");
+});
+    //sparkle
+    for (let i = 0; i < 5; i++) {
+    spawnSparkle();
+}
+
+loop(5, spawnSparkle);
+    
+    player.onCollide("sparkle", (s) => {
+
+    destroy(s);
+
+    play("sparkleSound");
+
+    gameScore++;
+
+    scoreText.text = gameScore.toString();
+
+});
+    //camera
+     camScale(1.5);
+    player.onUpdate(() => {
+      camPos(player.pos);
+     
+    })
+    
+    //timer + analogue movement
+ onUpdate(() => {
+
+    const moveDir = getGamepadStick("left");
+
+    if (moveDir.len() > DEADZONE) {
+        player.move(moveDir.scale(SPEED));
+    }
+
+    timeLeft -= dt();
+
+    timer.text = timeLeft.toFixed(1);
+
+    scoreText.text = gameScore.toString();
+
+    if (timeLeft <= 0) {
+        go("lose");
+    }
+
+    if (gameScore >= 50) {
+        go("win");
     }
 
 });
@@ -508,8 +560,11 @@ const returnExit = add([
       anchor("center"),
       color(BLACK),
     ]);
+    
 
     onKeyPress("enter", () => {
+      gameScore = 0;
+      timeLeft=30;
       go("level1");
     });
   });
@@ -534,6 +589,8 @@ const returnExit = add([
     ]);
 
     onKeyPress("enter", () => {
+      gameScore = 0;
+      timeLeft=30;
       go("level1");
     });
   });
