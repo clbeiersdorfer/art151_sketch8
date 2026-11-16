@@ -51,13 +51,13 @@ buttons: {
         speed: 5,
         loop: true,
       },
-      left: {
+      "left": {
         from: 4,
         to: 7,
         speed: 10,
         loop: true,
       },
-      right: {
+      "right": {
         from: 8,
         to: 11,
         speed: 10,
@@ -76,7 +76,7 @@ buttons: {
     sliceX: 4,
     sliceY: 4,
     anims: {
-      idle: {
+      "idle": {
         from: 0,
         to: 15,
         speed: 5,
@@ -157,7 +157,7 @@ buttons: {
   }
 
   function spawnBFlyWave () {
-    const amount = randi(3, 8);
+    const amount = randi(2, 5);
 
     for (let i = 0; i < amount; i++) {
       spawnBFly();
@@ -194,7 +194,7 @@ buttons: {
     ]);
 
     const player = add([
-      sprite("playeridle"),
+      sprite("player"),
       pos(center()),
       anchor("center"),
       area(),
@@ -204,7 +204,7 @@ buttons: {
       doubleJump(),
     ]);
 
-    player.play("idle");
+    player.play("forward");
     
     const levelExit = add([
     rect(10,height()),
@@ -252,20 +252,24 @@ buttons: {
       player.move(SPEED, 0);
       facing = RIGHT;
       playBee();
+      player.play("right");
     });
 
     onButtonDown("moveLeft", () => {
       player.move(-SPEED, 0);
       facing = LEFT;
       playBee();
+      player.play("left")
     });
 
     onButtonDown("moveUp", () => {
       player.doubleJump();
+      player.play('forward')
     });
 
     onButtonDown("moveDown", () => {
       player.move(0, -SPEED);
+      player.play("back")
     });
 
     // PROJECTILES
@@ -502,7 +506,7 @@ loop(5, spawnSparkle);
 
 });
     //camera
-     camScale(1.5);
+     setCamScale(1.5);
     player.onUpdate(() => {
       camPos(player.pos);
      
@@ -522,10 +526,6 @@ loop(5, spawnSparkle);
     timer.text = timeLeft.toFixed(1);
 
     scoreText.text = gameScore.toString();
-
-    if (timeLeft <= 0) {
-        go("lose");
-    }
 
     if (gameScore >= 50) {
         go("win");
